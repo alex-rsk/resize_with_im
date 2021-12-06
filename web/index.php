@@ -2,47 +2,70 @@
 include __DIR__ . '/../vendor/autoload.php';
 
 $app = new \Slim\Slim();
+error_reporting(E_ALL);
+ini_set('display_errors',1);
+
 $app->config('debug', true);
 
 $app->get('/', function () use ($app) {
     echo '/:url(/:width)';
 });
 
-$app->get('/:url(/:width)', function ($url) use ($app, $width = 200) {
-    $imageBlob = HttpClient::from()->get($url);
-    
+$app->get('/:url(/:width)', function ($url, $width) use ($app) {
+    $imageBlob = file_get_contents('pics/'.$url.'.jpg');
     $imagick = new Imagick();
     $imagick->readImageBlob($imageBlob);
-    
+    $sigma = floatval($_GET['sigma'] ?? 0.05);    
+    $gaussRadius = floatval($_GET['gauss_radius'] ?? 0.5);
+    $sharp = isset($_GET['sharpen']);
     $filters = [
-        'scale' => 'scale',
-        'POINT' => Imagick::FILTER_POINT,
-        'BOX' => Imagick::FILTER_BOX,
-        'TRIANGLE' => Imagick::FILTER_TRIANGLE,
-        'HERMITE' => Imagick::FILTER_HERMITE,
-        'HANNING' => Imagick::FILTER_HANNING,
-        'HAMMING' => Imagick::FILTER_HAMMING,
-        'BLACKMAN' => Imagick::FILTER_BLACKMAN,
-        'GAUSSIAN' => Imagick::FILTER_GAUSSIAN,
-        'QUADRATIC' => Imagick::FILTER_QUADRATIC,
-        'CUBIC' => Imagick::FILTER_CUBIC,
-        'CATROM' => Imagick::FILTER_CATROM,
-        'MITCHELL' => Imagick::FILTER_MITCHELL,
-        'BESSEL' => Imagick::FILTER_BESSEL,
-        'SINC' => Imagick::FILTER_SINC,
-        'LANCZOS' => Imagick::FILTER_LANCZOS,
+        'scale'         => 'scale',
+        'CUBIC'         => Imagick::FILTER_CUBIC,
+        'ROBIDOUX'      => Imagick::FILTER_ROBIDOUX,
+        'ROBIDOUXSHARP' => Imagick::FILTER_ROBIDOUXSHARP,
+        'LANCZOS'       => Imagick::FILTER_LANCZOS,
+        'LANCZOSSHARP'  => Imagick::FILTER_LANCZOSSHARP,
+        'LANCZOS2'      => Imagick::FILTER_LANCZOS2,
+        'LANCZOS2SHARP' => Imagick::FILTER_LANCZOS2SHARP,
+        'BOX'           => Imagick::FILTER_BOX,
+        'TRIANGLE'      => Imagick::FILTER_TRIANGLE,
+        'HERMITE'       => Imagick::FILTER_HERMITE,
+        'HANNING'       => Imagick::FILTER_HANNING,
+        'HAMMING'       => Imagick::FILTER_HAMMING,
+        'BLACKMAN'      => Imagick::FILTER_BLACKMAN,
+        'GAUSSIAN'      => Imagick::FILTER_GAUSSIAN,
+        'CATROM'        => Imagick::FILTER_CATROM,
+        'MITCHELL'      => Imagick::FILTER_MITCHELL,
+        'BESSEL'        => Imagick::FILTER_BESSEL,
+        'KAISER'        => Imagick::FILTER_KAISER,
+        'PARZEN'        => Imagick::FILTER_PARZEN,
+        'WELSH'         => Imagick::FILTER_WELSH,
+        'SINC'          => Imagick::FILTER_SINC,
     ];
+
+    $n = 20;    
     
-    $n = 20;
+    echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;"><img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
+    echo '<div style="clear:both;"> <form action="">'
+    . '     <input type="submit" name="sharpen" value="Резкость"/><br/>
+                Параметр 1<input type="text" name="gauss_radius" value="0.5" /><br/>
+                Параметр 2<input type="text" name="sigma" value="0.05" /><br/>'
+    . '     <input type="submit" name="normal" value="Без резкости"/><br/>';
+    echo '</form></div>';    
+    echo '<div style="overflow-x:scroll;overflow-y:hidden">';
+    echo '<div style="display:block; white-space:nowrap;">';
     foreach ($filters as $name => $filter) {
         $t1 = microtime(true);
         for ($i = 0; $i<$n; $i++) {
-            $im = $imagick->clone();
+            $im = clone $imagick;
             if ($filter === 'scale') {
                 $im->scaleImage($width, 0);
 
             } else {
                 $im->resizeImage($width, 0, $filter, 1);
+            }
+            if ($sharp) {
+                $im->unsharpMaskImage(0, $gaussRadius, 1, $sigma);
             }
         }
         $t2 = microtime(true);
@@ -50,6 +73,8 @@ $app->get('/:url(/:width)', function ($url) use ($app, $width = 200) {
         
         echo '<div style="display: inline-block;">'.$name.' ('.$spent.')<br/><img src="data:image/' . $imagick->getImageFormat() . ';base64,' . base64_encode($im->getImageBlob()) . '"/></div>';
     }
+    echo '</div>';
+    echo '</div>';
 });
 
 $app->run();

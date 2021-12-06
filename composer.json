@@ -1,6 +1,7 @@
 {
     "require": {
         "slim/slim": "~2.6",
-        "urmaul/httpclient": "~1.1"
+        "urmaul/httpclient": "~1.1",
+        "slim/php-view": "^3.1"
     }
 }
