@@ -19,6 +19,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $sigma = floatval($_GET['sigma'] ?? 0.5);
     $threshold = floatval($_GET['threshold'] ?? 0.05);
     $sharp = isset($_GET['sharpen']);
+    $quality = intval($_GET['qual'] ?? 100);
     echo '<html><head>';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />';
     echo '</head><body>';
@@ -47,9 +48,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         'PARZEN'        => Imagick::FILTER_PARZEN,
         'WELSH'         => Imagick::FILTER_WELSH,*/
         'SINC'          => Imagick::FILTER_SINC,
-    ];    
-
-    echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;"><img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
+    ];
     echo '<div style="clear:both;"> <form action="">'
     . '     <button type="submit" name="sharpen" value="1" style="margin-right:10px">Резкость</button>
             <button type="submit" name="normal" value="1">Без резкости</button>
@@ -57,8 +56,10 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         <br/>
     G<input type="text" name="gauss_radius" value="'.$gaussRadius.'" style="width:40px"/>
     S<input type="text" name="sigma" value="'.$sigma.'" style="width:40px"/>
-    T<input type="text" name="threshold" value="'.$threshold.'" style="width:40px"/><br/>';
+    T<input type="text" name="threshold" value="'.$threshold.'" style="width:40px"/>
+    Q-ty<input type="text" name="qual"  style="width:40px" value="'.$quality.'"><br/>';
     echo '</form></div>';    
+    echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;"><img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
     echo '<div style="overflow-x:scroll;overflow-y:hidden;width:'.$width.'px">';
     echo '<div style="display:block; white-space:nowrap;">';
     foreach ($filters as $name => $filter) {
@@ -66,6 +67,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         if (isset($_GET['srgb'])) {
              $im->setImageColorspace(\Imagick::COLORSPACE_SRGB);
         }
+        $im->setImageCompressionQuality($quality);
         switch ($filter) {
            case 'scale': $im->scaleImage($width, 0); break;
            default: 
