@@ -15,8 +15,9 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $imageBlob = file_get_contents('pics/'.$url.'.jpg');
     $imagick = new Imagick();
     $imagick->readImageBlob($imageBlob);
-    $sigma = floatval($_GET['sigma'] ?? 0.05);    
-    $gaussRadius = floatval($_GET['gauss_radius'] ?? 0.5);
+    $gaussRadius = floatval($_GET['gauss_radius'] ?? 0);
+    $sigma = floatval($_GET['sigma'] ?? 0.5);
+    $threshold = floatval($_GET['threshold'] ?? 0.05);
     $sharp = isset($_GET['sharpen']);
     echo '<html><head>';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />';
@@ -54,8 +55,9 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;"><img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
     echo '<div style="clear:both;"> <form action="">'
     . '     <input type="submit" name="sharpen" value="Резкость"/><br/>
-                Параметр 1<input type="text" name="gauss_radius" value="'.$gaussRadius.'" /><br/>
-                Параметр 2<input type="text" name="sigma" value="'.$sigma.'" /><br/>'
+                Гаусс-радиус<input type="text" name="gauss_radius" value="'.$gaussRadius.'" /><br/>
+                Сигма<input type="text" name="sigma" value="'.$sigma.'" /><br/>
+                Порог<input type="text" name="threshold" value="'.$threshold.'" /><br/>'
     . '     <input type="submit" name="normal" value="Без резкости"/><br/>';
     echo '</form></div>';    
     echo '<div style="overflow-x:scroll;overflow-y:hidden;width:'.$width.'px">';
@@ -64,20 +66,19 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         $t1 = microtime(true);
         for ($i = 0; $i<$n; $i++) {
             $im = clone $imagick;
-            if ($filter === 'scale') {
-                $im->scaleImage($width, 0);
-
-            } else {
-                $im->resizeImage($width, 0, $filter, 1);
+            switch ($filter) {
+               case 'scale': $im->scaleImage($width, 0); break;
+               default: 
+                $im->resizeImage($width, 0, $filter, 1); 
             }
             if ($sharp) {
-                $im->unsharpMaskImage(0, $gaussRadius, 1, $sigma);
+                $im->unsharpMaskImage($gaussRadius, $sigma, 1, $threshold);
             }
         }
         $t2 = microtime(true);
         $spent = round(($t2 - $t1)/$n*1000, 1);
-        
-	echo '<div style="display: inline-block; margin:0 5px 0 5px">'.$name.' ('.$spent.')<br/><img src="data:image/' . $imagick->getImageFormat() . ';base64,' . base64_encode($im->getImageBlob()) . '"/></div>';
+        echo '<div style="display: inline-block; margin:0 5px 0 5px">'.$name.' ('.$spent.')<br/><img src="data:image/' . $imagick->getImageFormat() . ';base64,' . base64_encode($im->getImageBlob()) . '"/></div>';
+        $im->removeImage();
     }
     echo '</div>';
     echo '</div>';
