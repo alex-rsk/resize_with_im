@@ -64,7 +64,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     foreach ($filters as $name => $filter) {
         $im = clone $imagick;
         if (isset($_GET['srgb'])) {
-             $image->setImageColorspace(\Imagick::COLORSPACE_SRGB);
+             $im->setImageColorspace(\Imagick::COLORSPACE_SRGB);
         }
         switch ($filter) {
            case 'scale': $im->scaleImage($width, 0); break;
