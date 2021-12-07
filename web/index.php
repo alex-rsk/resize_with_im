@@ -20,6 +20,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $threshold = floatval($_GET['threshold'] ?? 0.05);
     $sharp = isset($_GET['sharpen']);
     $quality = intval($_GET['qual'] ?? 100);
+    $blur = intval($_GET['blur'] ?? 1);
     echo '<html><head>';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />';
     echo '</head><body>';
@@ -50,13 +51,14 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         'SINC'          => Imagick::FILTER_SINC,
     ];
     echo '<div style="clear:both;"> <form action="">'
-    . '     <button type="submit" name="sharpen" value="1" style="margin-right:10px">Резкость</button>
-            <button type="submit" name="normal" value="1">Без резкости</button>
-            <input type="checkbox" name="srgb" value="1" '.(isset($_GET['srgb']) ? 'checked' : '').'>sRGB<br/>
+    . '     <button type="submit" name="sharpen" value="1" style="margin-right:10px">Sharpen</button>
+            <button type="submit" name="normal" value="1">Without sharpness</button>
+    <!--        <input type="checkbox" name="srgb" value="1" '.(isset($_GET['srgb']) ? 'checked' : '').'>sRGB<br/> -->
         <br/>
     G<input type="text" name="gauss_radius" value="'.$gaussRadius.'" style="width:40px"/>
     S<input type="text" name="sigma" value="'.$sigma.'" style="width:40px"/>
     T<input type="text" name="threshold" value="'.$threshold.'" style="width:40px"/>
+    Blur<input type="text" name="blur"  style="width:40px" value="'.$blur.'">
     Q-ty<input type="text" name="qual"  style="width:40px" value="'.$quality.'"><br/>';
     echo '</form></div>';    
     echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;"><img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
@@ -71,7 +73,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         switch ($filter) {
            case 'scale': $im->scaleImage($width, 0); break;
            default: 
-           $im->resizeImage($width, 0, $filter, 1); 
+           $im->resizeImage($width, 0, $filter, $blur); 
         }
         if ($sharp) {
             $im->unsharpMaskImage($gaussRadius, $sigma, 1, $threshold);
