@@ -17,7 +17,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $imagick->readImageBlob($imageBlob);
     if (isset($_GET['krat'])) {
         $imageWidth = $imagick->getImageWidth()/2;
-        echo '<h3>Кратное:'.$width.'</h3>';
+        echo '<h3>Кратное:'.$imageWidth.'</h3>';
     } else {
         $imageWidth = $width;
     }
