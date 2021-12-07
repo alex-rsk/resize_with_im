@@ -20,7 +20,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $threshold = floatval($_GET['threshold'] ?? 0.05);
     $sharp = isset($_GET['sharpen']);
     $quality = intval($_GET['qual'] ?? 100);
-    $blur = intval($_GET['blur'] ?? 1);
+    $blur = floatval($_GET['blur'] ?? 1.0);
     echo '<html><head>';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />';
     echo '</head><body>';
