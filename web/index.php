@@ -60,7 +60,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     <div style="margin-bottom:10px">
          <button type="submit" name="sharpen" value="1" style="margin-right:10px">Sharpen</button>
             <button type="submit" name="normal" value="1">Without sharpness</button>
-            <input type="checkbox" name="krat" value="1" '.(isset($_GET['krat']) ? 'checkbox' : '').'>x/2
+            <input type="checkbox" name="krat" value="1" '.(isset($_GET['krat']) ? 'checked' : '').'>x/2
     <!--        <input type="checkbox" name="srgb" value="1" '.(isset($_GET['srgb']) ? 'checked' : '').'>sRGB<br/> -->
     </div>
     <div>
