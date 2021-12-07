@@ -16,8 +16,10 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $imagick = new Imagick();
     $imagick->readImageBlob($imageBlob);
     if (isset($_GET['krat'])) {
-        $width = $imagick->getImageWidth()/2;
+        $imageWidth = $imagick->getImageWidth()/2;
         echo '<h3>Кратное:'.$width.'</h3>';
+    } else {
+        $imageWidth = $width;
     }
     $gaussRadius = floatval($_GET['gauss_radius'] ?? 0);
     $sigma = floatval($_GET['sigma'] ?? 0.5);
@@ -68,7 +70,8 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     Blur<input type="text" name="blur"  style="width:40px" value="'.$blur.'">
     Q-ty<input type="text" name="qual"  style="width:40px" value="'.$quality.'"></div>';
     echo '</form></div>';    
-    echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;"><img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
+    echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;">'
+        . '<img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
     echo '<div style="overflow-x:scroll;overflow-y:hidden;width:'.$width.'px">';
     echo '<div style="display:block; white-space:nowrap;">';
     foreach ($filters as $name => $filter) {
@@ -78,15 +81,15 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         }
         $im->setImageCompressionQuality($quality);
         switch ($filter) {
-           case 'scale': $im->scaleImage($width, 0); break;
+           case 'scale': $im->scaleImage($imageWidth, 0); break;
            default: 
-           $im->resizeImage($width, 0, $filter, $blur); 
+           $im->resizeImage($imageWidth, 0, $filter, $blur); 
         }
         if ($sharp) {
             $im->unsharpMaskImage($gaussRadius, $sigma, 1, $threshold);
         }
         echo '<div style="display: inline-block; margin:0 5px 0 5px">'
-            .$name.' <br/><img src="data:image/' . $imagick->getImageFormat() . ';base64,' . base64_encode($im->getImageBlob()) . '"/></div>';
+            .$name.' <br/><img style="width:'.$width.'px; height:'.$width.'px" src="data:image/' . $imagick->getImageFormat() . ';base64,' . base64_encode($im->getImageBlob()) . '"/></div>';
         $im->removeImage();
     }
     echo '</div>';
