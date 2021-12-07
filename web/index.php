@@ -15,6 +15,10 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $imageBlob = file_get_contents('pics/'.$url.'.jpg');
     $imagick = new Imagick();
     $imagick->readImageBlob($imageBlob);
+    if (isset($_GET['krat'])) {
+        $width = $imagick->getImageWidth()/2;
+        echo '<h3>Кратное:'.$width.'</h3>';
+    }
     $gaussRadius = floatval($_GET['gauss_radius'] ?? 0);
     $sigma = floatval($_GET['sigma'] ?? 0.5);
     $threshold = floatval($_GET['threshold'] ?? 0.05);
@@ -50,16 +54,19 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         'WELSH'         => Imagick::FILTER_WELSH,*/
         'SINC'          => Imagick::FILTER_SINC,
     ];
-    echo '<div style="clear:both;"> <form action="">'
-    . '     <button type="submit" name="sharpen" value="1" style="margin-right:10px">Sharpen</button>
+    echo '<div style="clear:both;"> <form action="">
+    <div style="margin-bottom:10px">
+         <button type="submit" name="sharpen" value="1" style="margin-right:10px">Sharpen</button>
             <button type="submit" name="normal" value="1">Without sharpness</button>
+            <input type="checkbox" name="krat" value="1" '.(isset($_GET['krat']) ? 'checkbox' : '').'>x/2
     <!--        <input type="checkbox" name="srgb" value="1" '.(isset($_GET['srgb']) ? 'checked' : '').'>sRGB<br/> -->
-        <br/>
+    </div>
+    <div>
     G<input type="text" name="gauss_radius" value="'.$gaussRadius.'" style="width:40px"/>
     S<input type="text" name="sigma" value="'.$sigma.'" style="width:40px"/>
     T<input type="text" name="threshold" value="'.$threshold.'" style="width:40px"/>
     Blur<input type="text" name="blur"  style="width:40px" value="'.$blur.'">
-    Q-ty<input type="text" name="qual"  style="width:40px" value="'.$quality.'"><br/>';
+    Q-ty<input type="text" name="qual"  style="width:40px" value="'.$quality.'"></div>';
     echo '</form></div>';    
     echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;"><img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
     echo '<div style="overflow-x:scroll;overflow-y:hidden;width:'.$width.'px">';
