@@ -4,7 +4,6 @@ include __DIR__ . '/../vendor/autoload.php';
 $app = new \Slim\Slim();
 error_reporting(E_ALL);
 ini_set('display_errors',1);
-
 $app->config('debug', true);
 
 $app->get('/', function () use ($app) {
@@ -14,13 +13,8 @@ $app->get('/', function () use ($app) {
 $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $imageBlob = file_get_contents('pics/'.$url.'.jpg');
     $imagick = new Imagick();
+//    $imagick->setResolution(200,200);
     $imagick->readImageBlob($imageBlob);
-    if (isset($_GET['krat'])) {
-        $imageWidth = $imagick->getImageWidth()/2;
-        echo '<h3>Кратное:'.$imageWidth.'</h3>';
-    } else {
-        $imageWidth = $width;
-    }
     $gaussRadius = floatval($_GET['gauss_radius'] ?? 0);
     $sigma = floatval($_GET['sigma'] ?? 0.5);
     $threshold = floatval($_GET['threshold'] ?? 0.05);
@@ -30,8 +24,15 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     echo '<html><head>';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />';
     echo '</head><body>';
+    if (isset($_GET['krat'])) {
+       $imageWidth = $imagick->getImageWidth()/2;
+       echo '<h3>New images width set to:'.$imageWidth.'</h3>';
+    } else {
+          $imageWidth = $width;
+    }
+
     if ($sharp) {
-	    echo '<h2>С резкостью</h2>';
+	    echo '<h3>Sharp</h3>';
     }
     $filters = [
         'scale'         => 'scale',
@@ -76,9 +77,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     echo '<div style="display:block; white-space:nowrap;">';
     foreach ($filters as $name => $filter) {
         $im = clone $imagick;
-        if (isset($_GET['srgb'])) {
-             $im->setImageColorspace(\Imagick::COLORSPACE_SRGB);
-        }
+        $im->setImageColorspace(\Imagick::COLORSPACE_SRGB);
         $im->setImageCompressionQuality($quality);
         switch ($filter) {
            case 'scale': $im->scaleImage($imageWidth, 0); break;
@@ -93,6 +92,11 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
         $im->removeImage();
     }
     echo '</div>';
+    echo '</div>';
+    echo '<div>';
+    echo '<h2>Distort Resize</h2>';
+    echo '<div style="clear:both;width:375px;height:375px;"><img src="/pics/gray_woman.jpg" style="width:100%;height:100%"/></div>';
+    echo '<div style="width:375px;height:375px"><img src="/pics/gray_woman_resized.jpg" style="width:100%; height:100%"/></div>';
     echo '</div>';
     echo '</body>';
 });
