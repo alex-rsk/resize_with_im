@@ -18,15 +18,21 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     $gaussRadius = floatval($_GET['gauss_radius'] ?? 0);
     $sigma = floatval($_GET['sigma'] ?? 0.5);
     $threshold = floatval($_GET['threshold'] ?? 0.05);
+    $gain = floatval($_GET['gain'] ?? 1.0);
     $sharp = isset($_GET['sharpen']);
     $quality = intval($_GET['qual'] ?? 100);
     $blur = floatval($_GET['blur'] ?? 1.0);
+    $retina = isset($_GET['retina']);
+    $format = 'jpg';
     echo '<html><head>';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />';
     echo '</head><body>';
-    if (isset($_GET['krat'])) {
+    if (isset($_GET['krat']) && $_GET['krat'] == 1) {
        $imageWidth = $imagick->getImageWidth()/2;
        echo '<h3>New images width set to:'.$imageWidth.'</h3>';
+    } elseif(isset($_GET['krat']) && $_GET['krat'] == 2) {
+       $imageWidth = $width*2;
+       echo '<h3>New images width set to:'.$imageWidth.'</h3>'; 
     } else {
           $imageWidth = $width;
     }
@@ -35,7 +41,7 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
 	    echo '<h3>Sharp</h3>';
     }
     $filters = [
-        'scale'         => 'scale',
+       /* 'scale'         => 'scale',*/
         'LANCZOS'       => Imagick::FILTER_LANCZOS,
         'LANCZOSSHARP'  => Imagick::FILTER_LANCZOSSHARP,
         'ROBIDOUX'      => Imagick::FILTER_ROBIDOUX,
@@ -61,15 +67,17 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     <div style="margin-bottom:10px">
          <button type="submit" name="sharpen" value="1" style="margin-right:10px">Sharpen</button>
             <button type="submit" name="normal" value="1">Without sharpness</button>
-            <input type="checkbox" name="krat" value="1" '.(isset($_GET['krat']) ? 'checked' : '').'>x/2
+            <input type="radio" name="krat" value="1" '.(isset($_GET['krat']) && $_GET['krat'] == 1 ? 'checked' : '').'>x/2
+            <input type="radio" name="krat" value="2" '.(isset($_GET['krat']) && $_GET['krat'] == 2 ? 'checked' : '').'>x*2
     <!--        <input type="checkbox" name="srgb" value="1" '.(isset($_GET['srgb']) ? 'checked' : '').'>sRGB<br/> -->
     </div>
-    <div>
-    G<input type="text" name="gauss_radius" value="'.$gaussRadius.'" style="width:40px"/>
-    S<input type="text" name="sigma" value="'.$sigma.'" style="width:40px"/>
-    T<input type="text" name="threshold" value="'.$threshold.'" style="width:40px"/>
-    Blur<input type="text" name="blur"  style="width:40px" value="'.$blur.'">
-    Q-ty<input type="text" name="qual"  style="width:40px" value="'.$quality.'"></div>';
+    <div style="font-size:smaller">
+    GaussRad<input type="text" name="gauss_radius" value="'.$gaussRadius.'" style="width:30px"/>
+    σ<input type="text" name="sigma" value="'.$sigma.'" style="width:30px"/>
+    Gain<input type="text" name="gain" value="'.$gain.'" style="width:30px"/>
+    Thr<input type="text" name="threshold" value="'.$threshold.'" style="width:40px"/>
+    Blur<input type="text" name="blur"  style="width:30px" value="'.$blur.'">
+    Q-ty<input type="text" name="qual"  style="width:30px" value="'.$quality.'"></div>';
     echo '</form></div>';    
     echo 'Original: <div style="clear:both: margin-bottom:3rem; width: '.$width.'; height:'.$width.'px;">'
         . '<img style="width:'.$width.'px; height:'.$width.'px" src="/pics/'.$url.'.jpg"/></div>';
@@ -93,12 +101,28 @@ $app->get('/:url(/:width)', function ($url, $width) use ($app) {
     }
     echo '</div>';
     echo '</div>';
+
+    $distortFilters = ['Lanczos', 'Lanczos2', 'Jinc', 'Gaussian'];
     echo '<div>';
-    echo '<h2>Distort Resize</h2>';
-    echo '<div style="clear:both;width:375px;height:375px;"><img src="/pics/gray_woman.jpg" style="width:100%;height:100%"/></div>';
-    echo '<div style="width:375px;height:375px"><img src="/pics/gray_woman_resized.jpg" style="width:100%; height:100%"/></div>';
+    echo '<h2>Метод Distort </h2>';
+    echo '<div style="clear:both;width:'.$width.'px;height:'.$width.'px;"><img src="/pics/'.$url.'.jpg" style="width:100%;height:100%"/></div>';
+    echo '<div style="overflow-x:scroll;overflow-y:hidden;width:'.$width.'px">';
+    echo '<div style="display:block; white-space:nowrap;">';
+    foreach ($distortFilters as $distortFilter) {
+        $sharpPart = ' ';
+        if ($sharp) {
+            $sharpPart = ' -unsharp '.$gaussRadius.'x'.$sigma.'+'.$gain.'+'.$threshold;
+        }
+        $outUrl = $url.'_'.$distortFilter.'.'.$format;
+        $cmd = 'convert ./pics/'.$url.'.jpg -distort Resize '.$imageWidth.'x'.$imageWidth.' -filter '
+            .$distortFilter.$sharpPart.' ./pics/'.$outUrl;
+        $res = shell_exec($cmd);
+        echo '<div style="display: inline-block; margin:0 5px 0 5px; width:'.$width.'px;height:'.$width.'px">'
+            .$distortFilter.'<BR>'. '<img src="/pics/'.$outUrl.'" style="width:100%; height:100%"/></div>';
+    }
     echo '</div>';
-    echo '</body>';
+    echo '</div>';
+
 });
 
 $app->run();
